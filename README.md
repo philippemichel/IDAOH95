@@ -1,2 +1,23 @@
+
+![USRC](novo_usrc.png)
+
+<!-- badges: start -->
+
+![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)
+
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+
+<!-- badges: end -->
+
+
 # IDAOH95
-Enquète sur plusieurs établissements
+
+Enquête sur plusieurs établissements
+
+
+**05/09/2024** Plan d'analyse des données
+
+## Fichiers
+
+- **_quarto.yml** : entête en yaml & $\LaTeX$ pour les fichiers Quarto
+- **plan_analyse.qmd** : plan d'analyse des données

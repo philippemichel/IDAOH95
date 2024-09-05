@@ -1,0 +1,98 @@
+---
+subtitle: "Plan d'analyse statistique"
+lof: false
+lot: false
+---
+
+```{r info}
+rm(list=ls())
+library("baseph")
+library("tidyverse")
+library("kableExtra")
+# sessionInfo()
+```
+
+# Généralités
+
+Le \gls{alpha} retenu sera de 0,05 & la \gls{puissance} de 0,8.
+
+Vu le faible nombre de cas on ne fera pas d'hypothèse de normalité. Les variables numériques seront présentées par leur \gls{mediane} avec les \gls{quartiles} & comparées grâce au test \gls{nonparam} de Wilcoxon pour séries non appariées. Les \gls{discrete} seront présentées en nombre avec le pourcentage. L'intervalle de confiance des pourcentages (à 95 %) sera calculé par bootstrap (package `boot` [@boot]). Le test du $\chi^2$ de Spearman sera utilisé sous réserve d'un effectif suffisant, à défaut le test exact de Fischer. Des graphiques seront réalisés pour les résultats importants (package `ggplot2` [@ggplot]).
+
+## Taille de l'échantillon
+
+L'unité est l'\gls{ehpad} & il y a 77 établissements dans le département qui peuvent potentiellement participer à l’enquête.
+
+Il s'agit d'une étude observationnelle simple pour lesquelles il est difficile de préciser un nombre de cas nécessaires en l'absence de test statistique central. Néanmoins on peut estimer à environ quarante \gls{ehpad} le strict minimum nécessaire pour avoir un échantillon utilisable s'il n'y a pas trop de données manquantes en particulier que les trois questionnaires (directeur, médecin coordonnateur, \gls{idec}) pour le même établissement soient remplis.
+
+
+
+## Données manquantes
+
+Le décompte des données manquantes sera réalisé pour chacun des trois questionnaires & présenté par des graphiques (package `visdat` [@visdat]). Les variables comportant trop de données manquantes ou non utilisables ne seront pas prises en compte après validation par le promoteur. 
+
+Une validation des trois questionnaires par des scores $\alpha$ de Cronbach (package `Chronbach` [@cronb]) sera réalisée.
+
+# Plan d'analyse
+
+## Description de la population
+
+### Analyse simple
+
+Des tableaux présenteront les résultats bruts des trois questionnaires.
+
+### Analyse factorielle
+
+Si le nombre de cas recueillis le permet une analyse factorielle en MCA (Analyse de correspondances multiples -- package `FactoMineR` [@facto]) sera réalisée.
+
+
+## Objectif principal
+
+*Les principales missions pouvant être déléguées à des \gls{ipa} seront identifiées par auto-questionnaire des médecins coordonnateurs (question n°19) et des \gls{idec} (question n°11).*
+
+Pour les deux questionnaires il s'agit d'un choix de bonnes réponses parmi une la même liste de réponses possibles. Le nombre & pourcentage de sélection pour chaque question sera présenté. Une comparaison des réponses entre les deux professions sera réalisée par des tests de $\chi~2$ de Spearman. 
+
+
+### Graphique
+
+Des liens éventuels entre les réponses sélectionnées seront présentés par un graphique en nœuds & liens (package `igraph` [@igraph]).
+
+## Objectifs secondaires
+
+### Objectif 1
+*Les moyens disponibles seront identifiés auprès des directeurs (questions n°4 à 15 : moyens humains, financiers, organisationnels).*
+
+Les réponses seront présentées en nombre & pourcentage sauf la question 5, numérique, qui sera présentée en \gls{mediane} avec les \gls{quartiles}.
+
+### Objectif 2
+*Le rôle effectif des médecins coordonnateurs sera recueilli par auto-questionnaire des médecins coordonnateurs (question n°12).*
+
+La question regroupe quatorze items sous forme d'échelle de \gls{likert}. La présentation sera faite par un tableaux & des graphiques (package `ggstats` [ggstats]]). 
+
+### Objectif 3
+*Le rôle effectif des \gls{idec} sera recueilli auprès des \gls{idec} (question n°10).*
+
+Les items proposés seront classés par les participants. On attribuera un rang de 1 à 10 pour chaque item. Les résultats seront présentés en \gls{mediane} avec les \gls{quartiles} avec un diagramme en boxplot ou en Ridgeline (package `ggridges` [@ggridges]) comparant les réponses globables puis par profession.
+
+### Objectif 4
+*La connaissance du métier d’\gls{ipa} sera recueillie auprès des directeurs (question n°19), médecins coordonnateurs (question n°17) et \gls{idec} (question n°11).*
+
+Pour les trois questionnaires il s'agit d'un choix de réponses parmi une la même liste de réponses possibles. Le nombre & pourcentage de sélection pour chaque question sera présenté. Une comparaison des réponses entre les trois professions sera réalisée par des tests de $\chi~2$ de Spearman. 
+
+### Objectif 5
+*Les directeurs (question n°17), médecins coordonnateurs (question n°22) et \gls{idec} (question n°13) seront sollicités pour identifier des axes d’améliorations organisationnels.*
+
+Pour les trois questionnaires il s'agit d'un choix de réponses parmi une la même liste de réponses possibles. Le nombre & pourcentage de sélection pour chaque question sera présenté. Une comparaison des réponses entre les trois professions sera réalisée par des tests de $\chi~2$ de Spearman. 
+
+\appendix
+
+# Technique 
+
+L'analyse statistique sera réalisée avec le logiciel **R**[@rstat] & divers packages. Outre ceux cités dans le texte ou utilisera en particulier `tidyverse` [@tidy] & `baseph` [@baseph].
+
+Un dépôt GitHub sera utilisé qui ne comprendra que le code & non les données ou résultats. Au besoin un faux tableau de données sera présenté pour permettre des tests.
+
+<https://github.com/philippemichel/idaoh95/>
+
+\printglossaries
+
+\addcontentsline{toc}{chapter}{C. Bibliographie}
