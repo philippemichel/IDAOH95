@@ -1,9 +1,9 @@
 ---
-subtitle: "Plan d'analyse statistique"
+subtitle: "Plan d'analyse statistique V1.1"
 lof: false
 lot: false
 ---
-
+"
 ```{r info}
 rm(list=ls())
 library("baseph")
@@ -16,7 +16,9 @@ library("kableExtra")
 
 Le \gls{alpha} retenu sera de 0,05 & la \gls{puissance} de 0,8.
 
-Vu le faible nombre de cas on ne fera pas d'hypothèse de normalité. Les variables numériques seront présentées par leur \gls{mediane} avec les \gls{quartiles} & comparées grâce au test \gls{nonparam} de Wilcoxon pour séries non appariées. Les \gls{discrete} seront présentées en nombre avec le pourcentage. L'intervalle de confiance des pourcentages (à 95 %) sera calculé par bootstrap (package `boot` [@boot]). Le test du $\chi^2$ de Spearman sera utilisé sous réserve d'un effectif suffisant, à défaut le test exact de Fischer. Des graphiques seront réalisés pour les résultats importants (package `ggplot2` [@ggplot]).
+Vu le faible nombre de cas on ne fera pas d'hypothèse de normalité. Les variables numériques seront présentées par leur \gls{mediane} avec les \gls{quartiles} & comparées grâce au test \gls{nonparam} de Wilcoxon pour séries non appariées. Les \gls{discrete} seront présentées en nombre avec le pourcentage. L'intervalle de confiance des pourcentages (à 95 %) sera calculé par \gls{bootstrap} (package `boot` [@boot]). Le test du $\chi^2$ de Spearman sera utilisé sous réserve d'un effectif suffisant, à défaut le test exact de Fischer. Des graphiques seront réalisés pour les résultats importants (package `ggplot2` [@ggplot]).
+
+Pour les objectifs où la même question est posée à plusieurs professions, une analyse recherchera une éventuelle corrélation entre les réponses & l’établissement par analyse en régression logistique (objectif principal, objectifs secondaires 4 & 5).   
 
 ## Taille de l'échantillon
 
@@ -71,7 +73,7 @@ La question regroupe quatorze items sous forme d'échelle de \gls{likert}. La pr
 ### Objectif 3
 *Le rôle effectif des \gls{idec} sera recueilli auprès des \gls{idec} (question n°10).*
 
-Les items proposés seront classés par les participants. On attribuera un rang de 1 à 10 pour chaque item. Les résultats seront présentés en \gls{mediane} avec les \gls{quartiles} avec un diagramme en boxplot ou en Ridgeline (package `ggridges` [@ggridges]) comparant les réponses globables puis par profession.
+Les items proposés seront classés par les participants. On attribuera un rang de 1 à 10 pour chaque item. Les résultats seront présentés en \gls{mediane} avec les \gls{quartiles} avec un diagramme en boxplot ou en Ridgeline (package `ggridges` [@ggridges]) comparant les réponses.
 
 ### Objectif 4
 *La connaissance du métier d’\gls{ipa} sera recueillie auprès des directeurs (question n°19), médecins coordonnateurs (question n°17) et \gls{idec} (question n°11).*
@@ -79,9 +81,9 @@ Les items proposés seront classés par les participants. On attribuera un rang 
 Pour les trois questionnaires il s'agit d'un choix de réponses parmi une la même liste de réponses possibles. Le nombre & pourcentage de sélection pour chaque question sera présenté. Une comparaison des réponses entre les trois professions sera réalisée par des tests de $\chi~2$ de Spearman. 
 
 ### Objectif 5
-*Les directeurs (question n°17), médecins coordonnateurs (question n°22) et \gls{idec} (question n°13) seront sollicités pour identifier des axes d’améliorations organisationnels.*
+*Les directeurs (question n°17), médecins coordonnateurs (question n°22) et \gls{idec} (question n°17) seront sollicités pour identifier des axes d’améliorations organisationnels.*
 
-Pour les trois questionnaires il s'agit d'un choix de réponses parmi une la même liste de réponses possibles. Le nombre & pourcentage de sélection pour chaque question sera présenté. Une comparaison des réponses entre les trois professions sera réalisée par des tests de $\chi~2$ de Spearman. 
+La même" liste de réponses est proposée aux trois groupes professionnels. Les items proposés seront classés par les participants. On attribuera un rang de 1 à 10 pour chaque item. Les résultats seront présentés en \gls{mediane} avec les \gls{quartiles} avec un diagramme en boxplot ou en Ridgeline (package `ggridges` [@ggridges]) comparant les réponses pour chaque groupe puis en comparant les réponses entre les trois groupes.
 
 \appendix
 
