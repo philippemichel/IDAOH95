@@ -1,5 +1,5 @@
 ---
-subtitle: "Plan d'analyse statistique V1.1"
+subtitle: "Plan d'analyse statistique V1.11"
 lof: false
 lot: false
 ---
@@ -22,7 +22,7 @@ Pour les objectifs où la même question est posée à plusieurs professions, un
 
 ## Taille de l'échantillon
 
-L'unité est l'\gls{ehpad} & il y a 77 établissements dans le département qui peuvent potentiellement participer à l’enquête.
+L'unité est l'\gls{ehpad} & il y a 75 établissements dans le département qui peuvent potentiellement participer à l’enquête.
 
 Il s'agit d'une étude observationnelle simple pour lesquelles il est difficile de préciser un nombre de cas nécessaires en l'absence de test statistique central. Néanmoins on peut estimer à environ quarante \gls{ehpad} le strict minimum nécessaire pour avoir un échantillon utilisable s'il n'y a pas trop de données manquantes en particulier que les trois questionnaires (directeur, médecin coordonnateur, \gls{idec}) pour le même établissement soient remplis.
 
@@ -49,7 +49,7 @@ Si le nombre de cas recueillis le permet une analyse factorielle en MCA (Analyse
 
 ## Objectif principal
 
-*Les principales missions pouvant être déléguées à des \gls{ipa} seront identifiées par auto-questionnaire des médecins coordonnateurs (question n°19) et des \gls{idec} (question n°11).*
+*Les principales missions pouvant être déléguées à des \gls{ipa} seront identifiées par auto-questionnaire des médecins coordonnateurs (question n°19) et des \gls{idec} (question n°15).*
 
 Pour les deux questionnaires il s'agit d'un choix de bonnes réponses parmi une la même liste de réponses possibles. Le nombre & pourcentage de sélection pour chaque question sera présenté. Une comparaison des réponses entre les deux professions sera réalisée par des tests de $\chi~2$ de Spearman. 
 
