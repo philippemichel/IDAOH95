@@ -3,7 +3,7 @@
 
 <!-- badges: start -->
 
-[PAS terminé](https://img.shields.io/badge/PAS-termin%C3%A9-green)
+[![PAS terminé](https://img.shields.io/badge/PAS-termin%C3%A9-green)
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
