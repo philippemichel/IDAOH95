@@ -78,7 +78,7 @@ idec <- read_ods("data/idaoh95.ods", sheet = "idec") |>
   janitor::clean_names() |>
   mutate(across(where(is.character), as.factor))
 bn <- read_ods("data/idaoh95.ods", sheet = "bnom_idec")
-var_label(idec) <- bn$Nom
+
 
 
 bn <- read_ods("data/idaoh95.ods", sheet = "bnom_idec")

@@ -330,7 +330,7 @@ bold_labels() |>
 ```{r}
 #| label: ars-prep
 
-medco |> 
+zz <- medco |> 
   dplyr::select(starts_with("ars_")) |> 
   pivot_longer(everything()) |> 
   
@@ -365,9 +365,10 @@ mutate(name = fct_recode(name,
     "Identifie les risques éventuels pour la santé publique dans les établissements et veille à la mise en oeuvre de toutes mesures utiles" = "ars_12",
     "Réalise des prescriptions médicales pour les résidents de l'établissement" = "ars_13",
     "Elabore, après avoir évalué leurs risques et leurs bénéfices avec le concours de l'équipe médico-sociale, les mesures particulières comprises dans l'annexe au contrat de séjour" = "ars_14"
-  )) |> 
-  
-  
+  )) 
+names(zz)[1] <- "Item"
+  #
+zz |> 
   tbl_cross(margin = "row", percent = "row") |> 
      bold_labels() |> 
   as_kable_extra(booktabs = TRUE) |>
@@ -376,5 +377,142 @@ mutate(name = fct_recode(name,
   column_spec(2:6, width = "15em") 
 ```
 
+## Critère III
 
+*Identifier le rôle effectif des IDEC*
+
+```{r}
+#| label idec-prep
+
+nn <- as.character(paste0("idec",1:11))
+
+zz <- idec |> 
+  dplyr::select(classer_missions) |> 
+  separate_wider_delim(classer_missions, delim = ";", names = nn) |> 
+  mutate(across(everything(), as.factor)) |> 
+  dplyr::select(- idec11)
+var_label(zz$idec1) <- "Item premier cité"
+```
+
+```{r}
+#| label: tbl-idec-premier
+#| tbl-cap: Rôle effectif des IDEC (item classé en premier)
+
+zz |> 
+  dplyr::select(idec1) |>
+  mutate(idec1 = fct_infreq(idec1)) |> 
+  tbl_summary() |> 
+  bold_labels() |>
+  modify_header(label ~ " ") |>
+  pexptabph(exp = expx,
+            nomfich = classeur ,
+            nomsheet = "idec_premier")
+
+```
+
+```{r}
+#| label: tbl-idec-cinq
+#| tbl-cap: Rôle effectif des IDEC (5 premiers items cités)
+
+zz |> 
+  dplyr::select(idec1:idec5) |> 
+  pivot_longer(everything(), values_to = "Item") |> 
+  mutate(Item = fct_infreq(Item)) |> 
+  dplyr::select(Item) |> 
+  tbl_summary() |> 
+  bold_labels() |>
+  modify_header(label ~ " ") |>
+  pexptabph(exp = expx,
+            nomfich = classeur ,
+            nomsheet = "idec_cinq")
+```
+
+## Critère IV
+
+*Évaluer la connaissance du métier d’IPA au sein des Ehpad*
+
+Les réponses des directeurs & des médecins coordonateurs sont très proches & souvent complètement opposées à celles des IDEC.
+
+```{r}
+#| label: ipa-prep
+
+ipad <- dire |> 
+  dplyr::select(missions_ipa) |> 
+  separate_rows(missions_ipa, sep = c(";")) |> 
+  mutate(profession = "Directeur")
+
+ipam <- medco |> 
+  dplyr::select(principales_missions_ipa) |> 
+  separate_rows(principales_missions_ipa, sep = c(";")) |> 
+  mutate(profession = "Médecin coordonateur")
+names(ipam)[1] <-  "missions_ipa"
+
+ipai <- idec |> 
+  dplyr::select(missions_ipa) |> 
+  separate_rows(missions_ipa, sep = c(";")) |> 
+  mutate(profession = "IDEC")
+
+zz <- rbind(ipad,ipam,ipai) |> 
+  dplyr::filter( missions_ipa != "") |> 
+  mutate(missions_ipa = fct_infreq(missions_ipa))
+```
+
+```{r}
+#| label: tbl-connais-ipa
+#| tbl-cap: Évaluer la connaissance du métier d’IPA au sein des Ehpad*
+
+zz |> 
+  tbl_summary(by = profession) |> 
+  add_overall() |> 
+    bold_labels() |>
+  modify_header(label ~ " ") |>
+  pexptabph(exp = expx,
+            nomfich = classeur ,
+            nomsheet = "connais-ipa")
+```
+
+
+## Critère V
+
+*Définir les axes d’amélioration à une bonne prise en charge médicale des résidents.*
+
+```{r}
+#| label: amelioration-prep 
+
+nn <- paste0("moyen", 1:11)
+
+direm <- dire |>
+  dplyr::select(moyens_a_mettre_en_oeuvre) |>
+  separate_wider_delim(moyens_a_mettre_en_oeuvre, ";", names = nn) |>
+  mutate(profession = "Directeur")
+
+medcom <- medco |>
+  dplyr::select(moyens_a_mettre_en_oeuvre) |>
+  separate_wider_delim(moyens_a_mettre_en_oeuvre, ";", names = nn) |>
+  mutate(profession = "Médecin coordonateur")
+
+idecm <- idec |>
+  dplyr::select(moyens_a_mettre) |>
+  separate_wider_delim(moyens_a_mettre, ";", names = nn) |>
+  mutate(profession = "IDEC")
+
+moyen <- rbind(direm, medcom, idecm) |>
+  pivot_longer(starts_with("moyen")) |>
+  dplyr::filter(value != "") |> 
+mutate(profession = fct_relevel(profession,
+    "Directeur", "Médecin coordonateur", "IDEC"
+  ))
+```
+
+```{r}
+#| label: tbl-moyen1
+#| tbl-cap: Axes d’amélioration à une bonne prise en charge médicale des résidents (premier cité)
+
+moyen |> 
+  dplyr::filter(name == "moyen1") |> 
+  dplyr::select(profession, value) |> 
+  mutate(value = fct_infreq(value)) |> 
+  tbl_summary(by = profession)
+  
+```
 
