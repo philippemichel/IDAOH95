@@ -63,5 +63,5 @@ license: "MIT"
 echo: false
 warning: false
 message: false
-cache: true
+cache: false
 

@@ -17,6 +17,7 @@ library(GGally)
 library(ggsci)
 library(tidyverse)
 library(scales)
+library(ggridges)
 library(kableExtra)
 library(gtsummary)
 library(DataExplorer)
@@ -32,6 +33,8 @@ options(OutDec = ",")
 #
 load("data/idaoh.RData")
 
+dir_ide <- left_join(dire,idec,by = "no_etab")
+
 prof <- c("dire", "medco","idec")
 nprof <- c("Directeurs", "Médecins coordonateurs", "IDEC")
 ```
@@ -42,15 +45,19 @@ Les données concernent les réponses de trois professions :
 
 - Directeurs d'hôpitaux (`r nrow(dire)` réponses)
 - Médecins coordonateurs (`r nrow(medco)` réponses)
-- Infirmiers (`r nrow(idec)` réponses)
+- \gls{idec} (`r nrow(idec)` réponses)
 
 
 Pour les variables en `Oui/Non` le nombre & pourcentage présent dans les tableaux correspond aux `Oui`.
 
+Pour toute les réponses à choix multiple le total des réponses correspond au nombre de réponses & non au nombre de participants.
+
+L'analyse factorielle n'a pu être réalisée. 
+
 ## Validation des questionnaires
 
 Les questionnaires sont bien remplis avec très peu de données manquantes. Il n'y aura donc pas besoin d'un traitement particulier (imputation\dots) pour celles-ci. Les variables constantes (toutes les réponses identiques) ou à réponses multiples ne sont pas représentées. 
-
+ 
 
 ```{r}
 #| label: cor-prep
@@ -112,7 +119,7 @@ corx(idec, "IDEC")
 Les corrélations fortes concernent :
 
 - pour les directeurs, des données influencées par la taille de l'établissement; 
-- pour les IDEC des données liées à l'ancienneté voire à l'implication dans le travail.
+- pour les \gls{idec}, des données liées à l'ancienneté voire à l'implication dans le travail.
 
 Dans les deux cas ces corrélations demeurent raisonnables & ont du sens donc ne posent pas de problème.
 
@@ -166,7 +173,7 @@ dire |>
   pexptabph(exp = expx, nomfich = classeur , nomsheet = "etab", lg = TRUE) 
 ```
 
-80 % des EHPAD tournent sans secrétariat ? 
+80 % des Ehpad tournent sans secrétariat ? 
 
 ### organisations spécifiques
 
@@ -205,13 +212,14 @@ mutate(organisations_specifiques =
 medco |> 
   dplyr::select(age:qnb_de_residents_pac,nb_d_annees,participation_commissions,deleguer_des_prescriptions) |> 
  tbl_summary(missing = "no",
-             value = list(deleguer_des_prescriptions = "Oui")) |> 
+             value = list(participation_commissions = "Oui",
+               deleguer_des_prescriptions = "Oui")) |> 
    bold_labels() |> 
    modify_header(label ~ " ") |>
   pexptabph(exp = expx, nomfich = classeur , nomsheet = "medco1", lg = TRUE) 
 ```
 
-La question `Vous arrive-t-il de déléguer des prescriptions à des IDE ou IDEC, si Oui lesquelles ?` n'a pas été traitée en raison du faible nombre de 
+Les questions `Vous arrive-t-il de déléguer des prescriptions à des IDE ou \Gls{idec}, si Oui lesquelles ?` n'ont pas été traitées en raison du faible nombre de réponses.
 
 ## IDEC
 
@@ -224,7 +232,7 @@ idec|>
   dplyr::select(annees_experience,du_complementaire,arrive_prescrire) |> 
  tbl_summary(missing = "no",
              value = list(du_complementaire = "Oui",
-                          arrive_de_prescrire = "Oui")) |> 
+                          arrive_prescrire = "Oui")) |> 
    bold_labels() |> 
    modify_header(label ~ " ") |>
   pexptabph(exp = expx, nomfich = classeur , nomsheet = "idec", lg = TRUE) 
@@ -232,9 +240,9 @@ idec|>
 
 # Critère principal
 
-*Les principales missions pouvant être déléguées à des IPA seront identifiées par auto-questionnaire des médecins coordonnateurs et des IDEC*
+*Les principales missions pouvant être déléguées à des IPA seront identifiées par auto-questionnaire des médecins coordonnateurs et des \gls{idec}*
 
-Vu le faible nombre de cas, réponse par réponse, aucun test n'est possible. 
+Il existe des différences dans les réponses des médecins & des \gls{idec}. Les médecins sont plus réticents à laisser aux \gls{ipa} la prescription de bilans ou de traitements ainsi que l'interprétation des bilans ou l'évaluation quotidienne. 
 
 ```{r}
 #| label: mission-prep
@@ -263,17 +271,18 @@ var_label(mission) <- c( "Quelles seraient pour vous les principales missions d�
 
 mission |> 
   tbl_summary(by = profession) |> 
-  add_overall(  col_label = "**Total**  \nN = {style_number(N)}",
-) |>
+#  add_overall(  col_label = "**Total**  \nN = {style_number(N)}") |>
     bold_labels() |> 
+   add_p(test = list(everything()  ~ "chisq.test")) |> 
    modify_header(label ~ " ") |>
-  gexptabph(exp = expx, nomfich = classeur , nomsheet = "mission1")
+  gexptabph(exp = expx, nomfich = classeur , nomsheet = "mission1") |> 
+  column_spec(1, width = "30em") 
 ```
 
 ```{r}
 #| label: fig-missionsipa1
 #| fig-cap: Missions pouvant être déléguées à des IPA
-#| fig-asp: 1.8
+#| fig-asp: 1.5
 
 mission |> 
   mutate(missions_ipa_structure =fct_lump_min(missions_ipa_structure,24,, other_level = "Autres")) |> 
@@ -294,8 +303,8 @@ mission |>
       vjust = 0.5),
   axis.text.y = element_text(size = 12),
   legend.position = "top"
-  ) +
-  scale_x_discrete(labels = label_wrap(30))
+  ) 
+ 
 ```
 
 # Critères secondaires
@@ -333,14 +342,7 @@ bold_labels() |>
 zz <- medco |> 
   dplyr::select(starts_with("ars_")) |> 
   pivot_longer(everything()) |> 
-  
-  ## Réordonnancement de zz$value
-mutate(value = fct_relevel(value,
-    "Vous ne souhaiteriez pas déléguer cette mission", "Vous souhaitez déléguer mais vous ne le faites pas",
-    "Il vous est déjà arrivé de déléguer en totalité  la mise en œuvre de cette mission",
-    "Il vous est déjà arrivé de déléguer partiellement la mise en œuvre de cette mission",
-    "Mission qui vous semble obsolète"
-  )) |> 
+
   
   ## Réordonnancement de zz$name
 mutate(name = fct_relevel(name,
@@ -351,23 +353,28 @@ mutate(name = fct_relevel(name,
  ## Recodage de zz$name
   ## Réordonnancement de zz$name
 mutate(name = fct_recode(name,
-    "Elabore, avec le concours de l'équipe soignante, le projet général de soins, s'intégrant dans le projet d'établissement, et coordonne et évalue sa mise en œuvre" = "ars_1",
+    "Élabore, avec le concours de l'équipe soignante, le projet général de soins, s'intégrant dans le projet d'établissement, et coordonne et évalue sa mise en œuvre" = "ars_1",
     "Donne un avis sur les admissions des personnes à accueillir" = "ars_2",
     "Préside la commission de coordination gériatrique" = "ars_3",
     "Évalue et valide l'état de dépendance des résidents et leurs besoins en soins requis" = "ars_4",
     "Veille à l'application des bonnes pratiques gériatriques, formule toute recommandation utile dans ce domaine et contribue à l'évaluation de la qualité des soins" = "ars_5",
     "Contribue auprès des professionnels de santé exerçant dans l'établissement à la bonne adaptation aux impératifs gériatriques des prescriptions de médicaments et des produits et prestations" = "ars_6",
     "Contribue à la mise en œuvre d'une politique de formation et participe aux actions d'information des professionnels de santé exerçant dans l'établissement" = "ars_7",
-    "Elabore un dossier type de soins" = "ars_8",
-    "Etablit, avec le concours de l'équipe soignante, un rapport annuel d'activité médicale" = "ars_9",
+    "Élabore un dossier type de soins" = "ars_8",
+    "Établit, avec le concours de l'équipe soignante, un rapport annuel d'activité médicale" = "ars_9",
     "Donne un avis sur le contenu et participe à la mise en oeuvre de la ou des conventions conclues entre l'établissement et les établissements de santé" = "ars_10",
     "Collabore à la mise en oeuvre de réseaux gérontologiques coordonnés" = "ars_11",
     "Identifie les risques éventuels pour la santé publique dans les établissements et veille à la mise en oeuvre de toutes mesures utiles" = "ars_12",
     "Réalise des prescriptions médicales pour les résidents de l'établissement" = "ars_13",
-    "Elabore, après avoir évalué leurs risques et leurs bénéfices avec le concours de l'équipe médico-sociale, les mesures particulières comprises dans l'annexe au contrat de séjour" = "ars_14"
+    "Élabore, après avoir évalué leurs risques et leurs bénéfices avec le concours de l'équipe médico-sociale, les mesures particulières comprises dans l'annexe au contrat de séjour" = "ars_14"
   )) 
-names(zz)[1] <- "Item"
-  #
+names(zz) <- c("Item", "Rôle")
+```
+
+```{r}
+#| label: tbl-ars
+#| tbl-cap: Rôle effectif des médecins coordonnateurs
+
 zz |> 
   tbl_cross(margin = "row", percent = "row") |> 
      bold_labels() |> 
@@ -377,12 +384,40 @@ zz |>
   column_spec(2:6, width = "15em") 
 ```
 
+```{r}
+#| label: fig-ars
+#| fig-cap: Rôle effectif des médecins coordonnateurs
+#| fig-asp: 1.8
+
+levels(zz$Rôle) <- c("Il vous est déjà arrivé de déléguer en totalité", "Il vous est déjà arrivé de déléguer partiellement","Vous souhaitez déléguer mais vous ne le faites pas","Vous ne souhaiteriez pas déléguer cette mission", "Mission qui vous semble obsolète")
+
+zz |> 
+  ggplot() +
+  aes(x = Rôle, fill = Rôle) +
+  geom_bar(stat = "count") +
+  facet_wrap(vars(Item), ncol = 1) +
+  labs(title = "Rôle effectif des médecins coordonnateurs") +
+  theme_light() +
+  scale_fill_jama() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    axis.title.x = element_text(size = 8),
+    legend.text = element_text(size = 8),
+    axis.title.y = element_blank(),
+  axis.text.y = element_blank(),
+  axis.text.x = element_blank(),
+  legend.position = "right"
+  )
+```
+
+
+
 ## Critère III
 
-*Identifier le rôle effectif des IDEC*
+*Identifier le rôle effectif des \gls{idec}*
 
 ```{r}
-#| label idec-prep
+#| label: idec-prep
 
 nn <- as.character(paste0("idec",1:11))
 
@@ -391,7 +426,7 @@ zz <- idec |>
   separate_wider_delim(classer_missions, delim = ";", names = nn) |> 
   mutate(across(everything(), as.factor)) |> 
   dplyr::select(- idec11)
-var_label(zz$idec1) <- "Item premier cité"
+var_label(zz$idec1) <- "Premier item cité"
 ```
 
 ```{r}
@@ -412,7 +447,7 @@ zz |>
 
 ```{r}
 #| label: tbl-idec-cinq
-#| tbl-cap: Rôle effectif des IDEC (5 premiers items cités)
+#| tbl-cap: Rôle effectif des IDEC (cinq premiers items cités)
 
 zz |> 
   dplyr::select(idec1:idec5) |> 
@@ -427,11 +462,38 @@ zz |>
             nomsheet = "idec_cinq")
 ```
 
+```{r}
+#| label: tbl-idec_etb
+#| tbl-cap: Rôle effectif des IDEC  vs taille de l'établissement (premier item cité)
+
+zz <- dir_ide |> 
+  dplyr::select(classer_missions, nb_lits_rec) |> 
+  separate_wider_delim(classer_missions, delim = ";", names = nn) |> 
+#  drop_na(idec1) |> 
+  mutate(across(everything(), as.factor)) |> 
+  dplyr::select(- idec11)
+var_label(zz$idec1) <- "Premier item cité"
+
+zz |> 
+  dplyr::select(idec1, nb_lits_rec) |>
+  mutate(idec1 = fct_infreq(idec1)) |> 
+  tbl_summary(by = nb_lits_rec, missing = "no") |> 
+  bold_labels() |>
+    modify_spanning_header(c("stat_1", "stat_2") ~ "**Taille de l'établissement**") |> 
+  add_p() |> 
+  modify_header(label ~ " ") |>
+  pexptabph(exp = expx,
+            nomfich = classeur ,
+            nomsheet = "idec_etab_premier")
+```
+
+
+
 ## Critère IV
 
-*Évaluer la connaissance du métier d’IPA au sein des Ehpad*
+*Évaluer la connaissance du métier d’\gls{ipa} au sein des Ehpad*
 
-Les réponses des directeurs & des médecins coordonateurs sont très proches & souvent complètement opposées à celles des IDEC.
+Les réponses des directeurs & des médecins coordonateurs sont très proches & souvent complètement opposées à celles des \gls{idec}.
 
 ```{r}
 #| label: ipa-prep
@@ -455,20 +517,23 @@ ipai <- idec |>
 zz <- rbind(ipad,ipam,ipai) |> 
   dplyr::filter( missions_ipa != "") |> 
   mutate(missions_ipa = fct_infreq(missions_ipa))
+
+var_label(zz$missions_ipa) <- "Missions des IPA"
 ```
 
 ```{r}
 #| label: tbl-connais-ipa
-#| tbl-cap: Évaluer la connaissance du métier d’IPA au sein des Ehpad*
+#| tbl-cap: Évaluer la connaissance du métier d’\gls{ipa} au sein des Ehpad
 
 zz |> 
   tbl_summary(by = profession) |> 
-  add_overall() |> 
     bold_labels() |>
   modify_header(label ~ " ") |>
-  pexptabph(exp = expx,
+  add_p() |> 
+  gexptabph(exp = expx,
             nomfich = classeur ,
-            nomsheet = "connais-ipa")
+            nomsheet = "connais-ipa") |> 
+  column_spec(1, width = "30em")
 ```
 
 
@@ -501,18 +566,69 @@ moyen <- rbind(direm, medcom, idecm) |>
   dplyr::filter(value != "") |> 
 mutate(profession = fct_relevel(profession,
     "Directeur", "Médecin coordonateur", "IDEC"
-  ))
+  )) |> 
+  ## Recodage de moyen$value
+mutate(value = fct_recode(value, 
+    "Accompagnement des familles" = "Accompagnement des familles ",
+    "Plus de temps médical" = "Plus de temps médical  ",
+    "Plus de temps paramédical" = "Plus de temps paramédical        ",
+    "Présence d'une assistance sociale" = "Présence d’une assistance sociale"
+  )) |> 
+  mutate(value = as.factor(value))
+var_label(moyen$value) <- "Item"
 ```
 
 ```{r}
 #| label: tbl-moyen1
 #| tbl-cap: Axes d’amélioration à une bonne prise en charge médicale des résidents (premier cité)
+#| 
+xx <- chisq.test(moyen$value, moyen$profession)
+xx <- beaup(xx$p.value, affp = 1)
 
 moyen |> 
   dplyr::filter(name == "moyen1") |> 
   dplyr::select(profession, value) |> 
   mutate(value = fct_infreq(value)) |> 
-  tbl_summary(by = profession)
-  
+  tbl_summary(by = profession) |> 
+    add_overall(col_label = "**Total**") |> 
+    bold_labels() |>
+  modify_header(label ~ " ") |>
+  gexptabph(exp = expx,
+            nomfich = classeur ,
+            nomsheet = "moyen1")
 ```
 
+Il n'y a pas de différence visible sur l’ensemble des items (`r xx`). Une comparaison item par item est impossible vu le faible nombre de réponse pour chaque.
+
+```{r}
+#| label: tbl-moyen5
+#| tbl-cap: Axes d’amélioration à une bonne prise en charge médicale des résidents (cinq premiers cités)
+
+lnn <- paste0("moyen",1:5)
+
+moyen |> 
+  dplyr::filter(name %in% lnn) |> 
+  dplyr::select(profession, value) |> 
+  mutate(value = fct_infreq(value)) |> 
+  tbl_summary(by = profession) |> 
+    add_overall(col_label = "**Total**") |> 
+    bold_labels() |>
+  modify_header(label ~ " ") |>
+  gexptabph(exp = expx,
+            nomfich = classeur ,
+            nomsheet = "moyen5")
+```
+
+\appendix
+
+# Technique 
+
+L'analyse statistique a été réalisée avec le logiciel **R**[@rstat] & divers packages. Outre ceux cités dans le texte on a utilisé en particulier `tidyverse` [@tidy] & `baseph` [@baseph].
+
+Un dépôt GitHub a été utilisé qui ne comprend que le code & non les données ou résultats. Au besoin un faux tableau de données sera présenté pour permettre des tests.
+
+<https://github.com/philippemichel/idaoh95/>
+
+\printglossaries
+
+\addcontentsline{toc}{chapter}{C. Bibliographie}

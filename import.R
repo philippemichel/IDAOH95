@@ -27,6 +27,14 @@ dire <- read_ods("data/idaoh95.ods", sheet = "directeur") |>
 # rename_with(~ paste0("dir_", .x, recycle0 = TRUE))
 bn <- read_ods("data/idaoh95.ods", sheet = "bnom_dir")
 var_label(dire) <- bn$nom
+dire <- dire |>
+mutate(nb_lits_rec = cut(nb_lits,
+  include.lowest = TRUE,
+  right = FALSE,
+  dig.lab = 4,
+  breaks = c(0, 80,  300),
+  labels = c("< 80 lits", "80 lits et +")
+))
 #
 #   Médecins coordonnateurs
 #
