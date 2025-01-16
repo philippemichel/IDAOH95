@@ -40,7 +40,9 @@ _extensions
 *.gl*
 *.ist
 *.xdy
-
 IDAOH95.Rproj
 QTDublinIrish.otf
 generique.tex~
+IDAOH95x
+data
+test.R

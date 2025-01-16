@@ -1,0 +1,380 @@
+---
+subtitle: "Rapport statistique V1.0"
+---
+
+
+```{r}
+#| label: info
+
+rm(list = ls())
+classeur <- "idaoh95.ods"
+expx <- FALSE
+if (expx) {system(paste0("rm -f ",classeur))}
+
+library(corrplot)
+library(baseph)
+library(GGally)
+library(ggsci)
+library(tidyverse)
+library(scales)
+library(kableExtra)
+library(gtsummary)
+library(DataExplorer)
+library(colorspace)
+library(forestmodel)
+library(psych)
+library(labelled)
+
+# sessionInfo()
+theme_gtsummary_language(language = "fr", decimal.mark = ",")
+# theme_gtsummary_journal(journal = "jama")
+options(OutDec = ",")
+#
+load("data/idaoh.RData")
+
+prof <- c("dire", "medco","idec")
+nprof <- c("Directeurs", "Médecins coordonateurs", "IDEC")
+```
+
+# Généralités
+
+Les données concernent les réponses de trois professions :
+
+- Directeurs d'hôpitaux (`r nrow(dire)` réponses)
+- Médecins coordonateurs (`r nrow(medco)` réponses)
+- Infirmiers (`r nrow(idec)` réponses)
+
+
+Pour les variables en `Oui/Non` le nombre & pourcentage présent dans les tableaux correspond aux `Oui`.
+
+## Validation des questionnaires
+
+Les questionnaires sont bien remplis avec très peu de données manquantes. Il n'y aura donc pas besoin d'un traitement particulier (imputation\dots) pour celles-ci. Les variables constantes (toutes les réponses identiques) ou à réponses multiples ne sont pas représentées. 
+
+
+```{r}
+#| label: cor-prep
+
+corx <- function(prof,titx){
+  tit <- paste0("Corrélations - ",titx)
+  prof |> 
+   mutate_if(is.factor, as.numeric) |> 
+   dplyr::select(!id) |> 
+   ggcorr(drop = TRUE) +
+    scale_fill_continuous_sequential(palette = "Dark Mint") +   
+  labs(title = tit,
+      y = "n",
+      caption = "Corrélations. Validation interne du questionnaire."
+      ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.title.x = element_blank(),
+    legend.title = element_blank(),
+    axis.title.y = element_blank(),,
+         axis.text.x = element_text(size = 12 ),
+      axis.text.y = element_text(size = 12),
+      legend.position = "right")
+    }
+```
+
+```{r}
+#| label: fig-corddire
+#| fig-cap: Corrélations internes - directeurs
+dire |> 
+  janitor::remove_constant() |> 
+  dplyr::select(- organisations_specifiques) |> 
+  dplyr::select(- contains("moyen")) |> 
+corx("Directeurs")
+```
+
+```{r}
+#| label: fig-cormedco
+#| fig-cap: Corrélations internes - médecins coordonateurs
+
+medco |> 
+  dplyr::select(!starts_with(c("ars", "quelles"))) |> 
+  janitor::remove_constant() |> 
+corx("Médecins coordonateurs")
+```
+
+
+```{r}
+#| label: fig-cordidec
+#| fig-cap: Corrélations internes - IDEC
+
+corx(idec, "IDEC")
+```
+
+
+
+Les corrélations fortes concernent :
+
+- pour les directeurs, des données influencées par la taille de l'établissement; 
+- pour les IDEC des données liées à l'ancienneté voire à l'implication dans le travail.
+
+Dans les deux cas ces corrélations demeurent raisonnables & ont du sens donc ne posent pas de problème.
+
+```{r}
+#| label: tbl-cron
+#| tbl-cap: Cœfficient alpha de Cronbach
+
+
+cron <- function(prof){
+zz <- prof |>  
+  drop_na() |> 
+   mutate_if(is.factor, as.numeric) |> 
+  alpha(check.keys=TRUE)
+zz <- zz$total
+zz <- round(zz$std.alpha,2)
+return(zz)
+}
+#
+crondir <- cron(dire)
+cronmed <- cron(medco)
+cronid <- cron(idec)
+#
+cron <- c(crondir, cronmed,cronid)
+cron <- tibble(nprof,cron)
+names(cron) <- c("Profession", "Cœf. alpha")
+kbl(cron, booktabs = TRUE) |> 
+  kable_styling()
+```
+
+Les coefficients $\alpha$ de Cronbach pour les trois questionnaires sont corrects vu la taille des échantillons ce qui confirme la qualité du remplissage. 
+
+# Description
+
+Les questions à réponses multiples ne sont pas présentées dans ces tableaux
+
+## Les établissements
+
+Pour ces items on utilise les données recueillies auprès des directeurs.
+
+```{r}
+#| label: tbl-etab
+#| tbl-cap: Établissements
+
+dire |> 
+  dplyr::select(structure:nb_ama) |> 
+ tbl_summary(missing = "no",
+             value = list(medecin_coordonnateur_present = "Oui",
+                          idec_present = "Oui")) |> 
+   bold_labels() |> 
+   modify_header(label ~ " ") |>
+  pexptabph(exp = expx, nomfich = classeur , nomsheet = "etab", lg = TRUE) 
+```
+
+80 % des EHPAD tournent sans secrétariat ? 
+
+### organisations spécifiques
+
+```{r}
+#| label: tbl-orgspe
+#| tbl-cap: Organisations spécifiques
+
+dire |> 
+  dplyr::select(organisations_specifiques) |> 
+  separate_rows(organisations_specifiques, sep = c(";")) |> 
+  dplyr::filter(organisations_specifiques != "") |> 
+  mutate(organisations_specifiques = factor(organisations_specifiques)) |> 
+mutate(organisations_specifiques = 
+  fct_recode(organisations_specifiques,
+    "CLAN (Comité de Liaison Alimentation Nutrition)" = " Commission restauration",
+    "CLUD(Comité de Lutte contre la Douleur)" = " douleur",
+    "CLAN (Comité de Liaison Alimentation Nutrition)" = " nutrition",
+    "CLAN (Comité de Liaison Alimentation Nutrition)" = "commission nutrition",
+    "CLAN (Comité de Liaison Alimentation Nutrition)" = "Commission nutrition"
+  )) |> 
+ mutate(organisations_specifiques = fct_infreq(organisations_specifiques)) |> 
+  mutate(organisations_specifiques = fct_lump_min(organisations_specifiques,2, other_level = "Autres")) |> 
+ tbl_summary(missing = "no",
+             label = organisations_specifiques ~ "Organisations spécifiques" ) |> 
+   bold_labels() |> 
+   modify_header(label ~ " ") |>
+  pexptabph(exp = expx, nomfich = classeur , nomsheet = "orgspe", lg = TRUE) 
+```
+
+## Médecins coordonateurs
+
+```{r}
+#| label: tbl-medco1
+#| tbl-cap: Médecins coordonateurs - description
+
+medco |> 
+  dplyr::select(age:qnb_de_residents_pac,nb_d_annees,participation_commissions,deleguer_des_prescriptions) |> 
+ tbl_summary(missing = "no",
+             value = list(deleguer_des_prescriptions = "Oui")) |> 
+   bold_labels() |> 
+   modify_header(label ~ " ") |>
+  pexptabph(exp = expx, nomfich = classeur , nomsheet = "medco1", lg = TRUE) 
+```
+
+La question `Vous arrive-t-il de déléguer des prescriptions à des IDE ou IDEC, si Oui lesquelles ?` n'a pas été traitée en raison du faible nombre de 
+
+## IDEC
+
+
+```{r}
+#| label: tbl-idec1
+#| tbl-cap: IDEC - description
+
+idec|> 
+  dplyr::select(annees_experience,du_complementaire,arrive_prescrire) |> 
+ tbl_summary(missing = "no",
+             value = list(du_complementaire = "Oui",
+                          arrive_de_prescrire = "Oui")) |> 
+   bold_labels() |> 
+   modify_header(label ~ " ") |>
+  pexptabph(exp = expx, nomfich = classeur , nomsheet = "idec", lg = TRUE) 
+```
+
+# Critère principal
+
+*Les principales missions pouvant être déléguées à des IPA seront identifiées par auto-questionnaire des médecins coordonnateurs et des IDEC*
+
+Vu le faible nombre de cas, réponse par réponse, aucun test n'est possible. 
+
+```{r}
+#| label: mission-prep
+
+medmis <- medco |> 
+  dplyr::select(missions_ipa_structure) |> 
+  separate_rows(missions_ipa_structure, sep = c(";")) |> 
+  mutate(profession = "Médecin coordinateur")
+
+
+idecmis <- idec |> 
+  dplyr::select(missions_ipa_structure) |>
+  separate_rows(missions_ipa_structure, sep = c(";")) |> 
+   mutate(profession = "IDEC")
+
+mission <- rbind(medmis,idecmis) |> 
+  dplyr::filter(missions_ipa_structure != "") |> 
+  mutate(missions_ipa_structure = fct_infreq(missions_ipa_structure))
+
+var_label(mission) <- c( "Quelles seraient pour vous les principales missions d’une IPA au sein de votre structure ","Profession")
+```
+
+```{r}
+#| label: tbl-missionsipa1
+#| tbl-cap: Missions pouvant être déléguées à des IPA
+
+mission |> 
+  tbl_summary(by = profession) |> 
+  add_overall(  col_label = "**Total**  \nN = {style_number(N)}",
+) |>
+    bold_labels() |> 
+   modify_header(label ~ " ") |>
+  gexptabph(exp = expx, nomfich = classeur , nomsheet = "mission1")
+```
+
+```{r}
+#| label: fig-missionsipa1
+#| fig-cap: Missions pouvant être déléguées à des IPA
+#| fig-asp: 1.8
+
+mission |> 
+  mutate(missions_ipa_structure =fct_lump_min(missions_ipa_structure,24,, other_level = "Autres")) |> 
+  ggplot() +
+  aes(x = missions_ipa_structure, fill = profession) +
+  geom_bar(stat = "count", position = "dodge") +
+  labs(title = "Missions pouvant être déléguées à des IPA") +
+  theme_light() +
+  scale_fill_jama() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 12),
+    axis.title.x = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    axis.title.y = element_blank(),
+  axis.text.x = element_text(size = 9,
+      angle = 80,
+      vjust = 0.5),
+  axis.text.y = element_text(size = 12),
+  legend.position = "top"
+  ) +
+  scale_x_discrete(labels = label_wrap(30))
+```
+
+# Critères secondaires
+
+## Critère 1
+*État des lieux des moyens disponibles dans les Ehpad du Val d’Oise*
+
+```{r}
+#| label: tbl-moyens
+#| tbl-cap: Moyens disponibles dans les Ehpad du Val d’Oise
+
+
+dire |>
+  dplyr::select(financement:nb_ama) |>
+  tbl_summary(
+    missing = "no",
+    value = list(
+      medecin_coordonnateur_present = "Oui",
+      idec_present = "Oui"
+    )
+  ) |> 
+bold_labels() |>
+  modify_header(label ~ " ") |>
+  pexptabph(exp = expx,
+            nomfich = classeur ,
+            nomsheet = "moyens")
+```
+
+## Critère 2
+*Identifier le rôle effectif des médecins coordonnateurs*
+
+```{r}
+#| label: ars-prep
+
+medco |> 
+  dplyr::select(starts_with("ars_")) |> 
+  pivot_longer(everything()) |> 
+  
+  ## Réordonnancement de zz$value
+mutate(value = fct_relevel(value,
+    "Vous ne souhaiteriez pas déléguer cette mission", "Vous souhaitez déléguer mais vous ne le faites pas",
+    "Il vous est déjà arrivé de déléguer en totalité  la mise en œuvre de cette mission",
+    "Il vous est déjà arrivé de déléguer partiellement la mise en œuvre de cette mission",
+    "Mission qui vous semble obsolète"
+  )) |> 
+  
+  ## Réordonnancement de zz$name
+mutate(name = fct_relevel(name,
+    "ars_1", "ars_2", "ars_3", "ars_4", "ars_5", "ars_6", "ars_7",
+    "ars_8", "ars_9", "ars_10", "ars_11", "ars_12", "ars_13", "ars_14"
+  )) |> 
+  
+ ## Recodage de zz$name
+  ## Réordonnancement de zz$name
+mutate(name = fct_recode(name,
+    "Elabore, avec le concours de l'équipe soignante, le projet général de soins, s'intégrant dans le projet d'établissement, et coordonne et évalue sa mise en œuvre" = "ars_1",
+    "Donne un avis sur les admissions des personnes à accueillir" = "ars_2",
+    "Préside la commission de coordination gériatrique" = "ars_3",
+    "Évalue et valide l'état de dépendance des résidents et leurs besoins en soins requis" = "ars_4",
+    "Veille à l'application des bonnes pratiques gériatriques, formule toute recommandation utile dans ce domaine et contribue à l'évaluation de la qualité des soins" = "ars_5",
+    "Contribue auprès des professionnels de santé exerçant dans l'établissement à la bonne adaptation aux impératifs gériatriques des prescriptions de médicaments et des produits et prestations" = "ars_6",
+    "Contribue à la mise en œuvre d'une politique de formation et participe aux actions d'information des professionnels de santé exerçant dans l'établissement" = "ars_7",
+    "Elabore un dossier type de soins" = "ars_8",
+    "Etablit, avec le concours de l'équipe soignante, un rapport annuel d'activité médicale" = "ars_9",
+    "Donne un avis sur le contenu et participe à la mise en oeuvre de la ou des conventions conclues entre l'établissement et les établissements de santé" = "ars_10",
+    "Collabore à la mise en oeuvre de réseaux gérontologiques coordonnés" = "ars_11",
+    "Identifie les risques éventuels pour la santé publique dans les établissements et veille à la mise en oeuvre de toutes mesures utiles" = "ars_12",
+    "Réalise des prescriptions médicales pour les résidents de l'établissement" = "ars_13",
+    "Elabore, après avoir évalué leurs risques et leurs bénéfices avec le concours de l'équipe médico-sociale, les mesures particulières comprises dans l'annexe au contrat de séjour" = "ars_14"
+  )) |> 
+  
+  
+  tbl_cross(margin = "row", percent = "row") |> 
+     bold_labels() |> 
+  as_kable_extra(booktabs = TRUE) |>
+      kable_styling(latex_options = c("scale_down")) |> 
+  column_spec(1, width = "30em") |> 
+  column_spec(2:6, width = "15em") 
+```
+
+
+
