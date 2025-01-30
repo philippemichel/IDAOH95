@@ -69,13 +69,11 @@ mutate(nb_d_annees = fct_relevel(nb_d_annees,
 )) |>
 ## Recodage de medco$sous_quelle_forme en medco$sous_quelle_forme_rec
 mutate(sous_quelle_forme = fct_recode(sous_quelle_forme,
-    "En semaine" = "En semaine (lundi au vendredi) ;",
-    "En semaine et astreintes (nuit ou week-end)" = "En semaine (lundi au vendredi) ;Astreintes nuit ;",
-    "En semaine et astreintes (nuit ou week-end)" = "En semaine (lundi au vendredi) ;Astreintes nuit ;Astreintes week-end ;",
-    "En semaine et astreintes (nuit ou week-end)" = "En semaine (lundi au vendredi) ;Astreintes week-end ;"
-  ))
+                                      "En semaine" = "En semaine (lundi au vendredi);",
+                                      "En semaine avec astreintes" = "En semaine (lundi au vendredi);Astreintes nuit;",
+                                      "En semaine avec astreintes" = "En semaine (lundi au vendredi);Astreintes nuit;Astreintes week-end;",
+                                      "En semaine avec astreintes" = "En semaine (lundi au vendredi);Astreintes week-end;"))
 
-#
 bn <- read_ods("data/idaoh95.ods", sheet = "bnom_medco")
 var_label(medco) <- bn$Nom
 #

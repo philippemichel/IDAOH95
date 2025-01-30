@@ -16,6 +16,7 @@ library(corrplot)
 library(baseph)
 library(GGally)
 library(ggsci)
+library(ggstats)
 library(tidyverse)
 library(scales)
 library(ggridges)
@@ -32,6 +33,7 @@ library(labelled)
 theme_gtsummary_language(language = "fr", decimal.mark = ",")
 # theme_gtsummary_journal(journal = "jama")
 options(OutDec = ",")
+ptest <- list(all_continuous() ~ "wilcox.test", all_categorical() ~ "chisq.test")
 #
 load("data/idaoh.RData")
 
@@ -155,7 +157,7 @@ Les coefficients $\alpha$ de Cronbach pour les trois questionnaires sont correct
 
 # Description
 
-Les questions à réponses multiples ne sont pas présentées dans ces tableaux
+Les questions à réponses multiples ne sont pas présentées dans ces tableaux.
 
 ## Les établissements
 
@@ -175,7 +177,7 @@ dire |>
   pexptabph(exp = expx, nomfich = classeur , nomsheet = "etab", lg = TRUE) 
 ```
 
-80 % des Ehpad tournent sans secrétariat ? 
+80 % des \textsc{Ehpad} tournent sans secrétariat ? 
 
 ### organisations spécifiques
 
@@ -275,7 +277,7 @@ mission |>
   tbl_summary(by = profession) |> 
 #  add_overall(  col_label = "**Total**  \nN = {style_number(N)}") |>
     bold_labels() |> 
-   add_p(test = list(everything()  ~ "chisq.test")) |> 
+   add_p(test = ptest) |> 
    modify_header(label ~ " ") |>
   gexptabph(exp = expx, nomfich = classeur , nomsheet = "mission1") |> 
   column_spec(1, width = "30em") 
@@ -287,9 +289,24 @@ mission |>
 #| fig-asp: 1.5
 
 mission |> 
-  mutate(missions_ipa_structure =fct_lump_min(missions_ipa_structure,24,, other_level = "Autres")) |> 
+mutate(missions_rec =
+  fct_recode(missions_ipa_structure,
+    "Alerter le médecin" = "Alerter le médecin de toutes situations identifiées à risque",
+    "Bilans paracliniques de suivi" = "Prescrire et évaluer les bilans paracliniques de suivi",
+    "Suivi du patient" = "Planifier et coordonner le suivi du patient",
+    "Taitements, dispositifs médicaux matériel" = "Renouveler, ou adapter les traitements, les dispositifs médicaux et le matériel",
+    "Prise en charge globale" = "Coordonner en collaboration avec le médecin la prise en charge globale",
+    "Évaluer cliniquement le patient" = "Évaluer cliniquement le patient dans son ensemble",
+    "Mise en œuvre des traitements" = "Coordonner, en collaboration avec le médecin, la mise en œuvre des traitements",
+    "Entretien avec le patient" = "Conduire un entretien avec le patient et en rédiger l’anamnèse",
+    "Données issues de l’examen" = "Recueillir, interpréter et synthétiser les données issues de l’examen clinique et paraclinique",
+    "Prévention, de dépistage, éducation" = "Concevoir et réaliser des actions de prévention, de dépistage et d’éducation à la santé",
+    "Programme d’éducation thérapeutique" = "Concevoir et coordonner la mise en œuvre du programme d’éducation thérapeutique",
+    "Évaluation de la fragilité" = "Evaluation de la fragilité"
+  )) |> 
+  mutate(missions_rec =fct_lump_min(missions_rec,24,, other_level = "Autres")) |> 
   ggplot() +
-  aes(x = missions_ipa_structure, fill = profession) +
+  aes(x = missions_rec, fill = profession) +
   geom_bar(stat = "count", position = "dodge") +
   labs(title = "Missions pouvant être déléguées à des IPA") +
   theme_light() +
@@ -338,7 +355,7 @@ tit <- c("IDEC","Médecin coordinateur")
 colx = c("#00AFBB", "#FC4E07")
 
 par(cex = 0.6)
-radarchart(aa, title = "Principales missions d’une IPA au sein de votre structure", pcol = colx, , plwd =2, plty = 1)
+radarchart(aa, title = "Missions pouvant être déléguées à des IPA", pcol = colx, , plwd =2, plty = 1)
 legend(
   x = "bottom", legend = rownames(aa[-c(1,2),]), horiz = TRUE, col = colx,
   bty = 0,pch = 20, yjust = -2, xjust = 0)
@@ -348,15 +365,17 @@ legend(
 # Critères secondaires
 
 ## Critère 1
-*État des lieux des moyens disponibles dans les Ehpad du Val d’Oise*
+*État des lieux des moyens disponibles dans les \textsc{Ehpad} du Val d’Oise*
+
+Ce critère se base exclusivement sur les déclarations des directeurs d'établissement.
 
 ```{r}
 #| label: tbl-moyens
-#| tbl-cap: Moyens disponibles dans les Ehpad du Val d’Oise
+#| tbl-cap: Moyens disponibles dans les \textsc{Ehpad} du Val d’Oise
 
 
 dire |>
-  dplyr::select(financement:nb_ama) |>
+  dplyr::select(structure:nb_ama) |>
   tbl_summary(
     missing = "no",
     value = list(
@@ -368,7 +387,8 @@ bold_labels() |>
   modify_header(label ~ " ") |>
   pexptabph(exp = expx,
             nomfich = classeur ,
-            nomsheet = "moyens")
+            nomsheet = "moyens",
+            lg = FALSE)
 ```
 
 ## Critère 2
@@ -422,33 +442,26 @@ zz |>
   column_spec(2:6, width = "15em") 
 ```
 
+
 ```{r}
 #| label: fig-ars
 #| fig-cap: Rôle effectif des médecins coordonnateurs
-#| fig-asp: 1.8
+#| fig-asp: 1.5
 
-levels(zz$Rôle) <- c("Il vous est déjà arrivé de déléguer en totalité", "Il vous est déjà arrivé de déléguer partiellement","Vous souhaitez déléguer mais vous ne le faites pas","Vous ne souhaiteriez pas déléguer cette mission", "Mission qui vous semble obsolète")
-
-zz |> 
-  ggplot() +
-  aes(x = Rôle, fill = Rôle) +
-  geom_bar(stat = "count") +
-  facet_wrap(vars(Item), ncol = 1) +
-  labs(title = "Rôle effectif des médecins coordonnateurs") +
-  theme_light() +
-  scale_fill_jama() +
+medco |>
+  dplyr::select(starts_with("ars_")) |>
+  gglikert() +
   theme(
-    plot.title = element_text(size = 14, face = "bold"),
-    axis.title.x = element_text(size = 8),
-    legend.text = element_text(size = 8),
-    axis.title.y = element_blank(),
-  axis.text.y = element_blank(),
-  axis.text.x = element_blank(),
-  legend.position = "right"
+    legend.direction = "vertical",
+    legend.position = "bottom",
+    legend.text.align = 0,
+    labs(title = "Rôle effectif des médecins coordonnateurs") +
+      theme_light() +
+      scale_fill_jama()
   )
 ```
 
-
+\newpage
 
 ## Critère III
 
@@ -518,7 +531,7 @@ zz |>
   tbl_summary(by = nb_lits_rec, missing = "no") |> 
   bold_labels() |>
     modify_spanning_header(c("stat_1", "stat_2") ~ "**Taille de l'établissement**") |> 
-  add_p() |> 
+  add_p(test = ptest) |> 
   modify_header(label ~ " ") |>
   pexptabph(exp = expx,
             nomfich = classeur ,
@@ -529,7 +542,7 @@ zz |>
 
 ## Critère IV
 
-*Évaluer la connaissance du métier d’\gls{ipa} au sein des Ehpad*
+*Évaluer la connaissance du métier d’\gls{ipa} au sein des \textsc{Ehpad}*
 
 Les réponses des directeurs & des médecins coordonateurs sont très proches & souvent complètement opposées à celles des \gls{idec}.
 
@@ -561,13 +574,13 @@ var_label(zz$missions_ipa) <- "Missions des IPA"
 
 ```{r}
 #| label: tbl-connais-ipa
-#| tbl-cap: Évaluer la connaissance du métier d’\gls{ipa} au sein des Ehpad
+#| tbl-cap: Évaluer la connaissance du métier d’\gls{ipa} au sein des \textsc{Ehpad}
 
 zz |> 
   tbl_summary(by = profession) |> 
     bold_labels() |>
   modify_header(label ~ " ") |>
-  add_p() |> 
+  add_p(test = ptest) |> 
   gexptabph(exp = expx,
             nomfich = classeur ,
             nomsheet = "connais-ipa") |> 
@@ -628,8 +641,9 @@ moyen |>
   dplyr::select(profession, value) |> 
   mutate(value = fct_infreq(value)) |> 
   tbl_summary(by = profession) |> 
-    add_overall(col_label = "**Total**") |> 
+#    add_overall(col_label = "**Total**") |> 
     bold_labels() |>
+  add_p(test = ptest) |> 
   modify_header(label ~ " ") |>
   gexptabph(exp = expx,
             nomfich = classeur ,
@@ -649,7 +663,8 @@ moyen |>
   dplyr::select(profession, value) |> 
   mutate(value = fct_infreq(value)) |> 
   tbl_summary(by = profession) |> 
-    add_overall(col_label = "**Total**") |> 
+  add_p(test = ptest) |> 
+ #   add_overall(col_label = "**Total**") |> 
     bold_labels() |>
   modify_header(label ~ " ") |>
   gexptabph(exp = expx,
