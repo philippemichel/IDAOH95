@@ -4,7 +4,8 @@
 <!-- badges: start -->
 
 ![Static badge](https://img.shields.io/badge/PAS-termin%C3%A9-green)
-![Static badge](https://img.shields.io/badge/rapport-V1%C3%A9-orange)
+
+![Static badge](https://img.shields.io/badge/rapport-V1-orange)
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
 
