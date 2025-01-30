@@ -35,7 +35,6 @@ po/*~
 rsconnect/
 /.quarto/
 _extensions
-*.tex
 *.pdf
 *.gl*
 *.ist
@@ -46,3 +45,8 @@ generique.tex~
 IDAOH95x
 data
 test.R
+listacro.log
+generique.tex
+nb_cas.tex
+plan_analyse.tex
+rapport_idaoh95_1.tex
