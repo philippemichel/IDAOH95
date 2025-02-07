@@ -1,5 +1,5 @@
 ---
-subtitle: "Rapport statistique V1.0"
+subtitle: "Rapport statistique V1.1"
 cache: false
 ---
 
@@ -251,8 +251,8 @@ Il existe des différences dans les réponses des médecins & des \gls{idec}. Le
 #| label: mission-prep
 
 medmis <- medco |> 
-  dplyr::select(missions_ipa_structure) |> 
-  separate_rows(missions_ipa_structure, sep = c(";")) |> 
+  dplyr::select(missions_ipa_structure, prescripteur) |> 
+  separate_longer_delim(c(missions_ipa_structure,prescripteur), delim = c(";")) |> 
   mutate(profession = "Médecin coordinateur")
 
 
@@ -261,7 +261,9 @@ idecmis <- idec |>
   separate_rows(missions_ipa_structure, sep = c(";")) |> 
    mutate(profession = "IDEC")
 
-mission <- rbind(medmis,idecmis) |> 
+mission <- medmis |> 
+  dplyr::select(-prescripteur) |> 
+rbind(idecmis) |> 
   dplyr::filter(missions_ipa_structure != "") |> 
   mutate(missions_ipa_structure = fct_infreq(missions_ipa_structure))
 
@@ -358,6 +360,42 @@ legend(
   x = "bottom", legend = rownames(aa[-c(1,2),]), horiz = TRUE, col = colx,
   bty = 0,pch = 20, yjust = -2, xjust = 0) +
   scale_x_discrete(guide = guide_axis(n.dodge = 2))
+```
+
+
+```{r}
+#| label: tbl-medpresc
+#| tbl-cap: Missions pouvant être déléguées à des IPA (médecins)
+
+medmis |> 
+  dplyr::select(-profession) |> 
+  dplyr::filter(missions_ipa_structure != "") |> 
+  tbl_summary(by = prescripteur) |> 
+#  add_overall(  col_label = "**Total**  \nN = {style_number(N)}") |>
+    bold_labels() |> 
+   add_p(test = ptest) |> 
+   modify_header(label ~ " ") |>
+  gexptabph(exp = expx, nomfich = classeur , nomsheet = "mission1") |> 
+  column_spec(1, width = "30em") 
+```
+
+Il n'y a pas de différence visible entre les médecins coordonnateurs prescripteurs ou non pour leur vision du rôle de l'\gls{ipa}.
+
+```{r}
+#| label: tbl-ipa_nblits
+#| tbl-cap: issions pouvant être déléguées à des IPA (taille Ehpad)
+
+left_join(dire,medco, join_by(no_etab == numero_d_identification_de_letablissement)) |> dplyr::select(missions_ipa_structure,nb_lits_rec) |>
+  drop_na(missions_ipa_structure) |>
+  separate_longer_delim(c(missions_ipa_structure,nb_lits_rec), delim = c(";")) |>
+  dplyr::filter(missions_ipa_structure != "") |>
+  tbl_summary(by = nb_lits_rec) |>
+  #  add_overall(  col_label = "**Total**  \nN = {style_number(N)}") |>
+  bold_labels() |>
+  add_p(test = ptest) |>
+  modify_header(label ~ " ") |>
+  gexptabph(exp = expx, nomfich = classeur , nomsheet = "mission1") |>
+  column_spec(1, width = "30em")
 ```
 
 
@@ -543,7 +581,6 @@ zz |>
 
 *Évaluer la connaissance du métier d’\gls{ipa} au sein des \textsc{Ehpad}*
 
-Les réponses des directeurs & des médecins coordonateurs sont très proches & souvent complètement opposées à celles des \gls{idec}.
 
 ```{r}
 #| label: ipa-prep
@@ -571,6 +608,8 @@ zz <- rbind(ipad,ipam,ipai) |>
 var_label(zz$missions_ipa) <- "Missions des IPA"
 ```
 
+
+
 ```{r}
 #| label: tbl-connais-ipa
 #| tbl-cap: Évaluer la connaissance du métier d’\gls{ipa} au sein des \textsc{Ehpad}
@@ -584,6 +623,33 @@ zz |>
             nomfich = classeur ,
             nomsheet = "connais-ipa") |> 
   column_spec(1, width = "30em")
+```
+
+\clearpage
+### Nombre de cases cochées
+
+```{r}
+#| label: tbl-ipacases
+#| tbl-cap: Évaluer la connaissance du métier d’\gls{ipa} au sein des \textsc{Ehpad}
+
+ipam <- ipam |> 
+  dplyr::filter(missions_ipa !="")
+ipai <- ipai |> 
+  dplyr::filter(missions_ipa !="")
+ipad <- ipad |> 
+  dplyr::filter(missions_ipa !="")
+
+dd <- round(nrow(ipad)/nrow(dire),2)
+mm <- round(nrow(ipam)/nrow(medco),2)
+ii <- round(nrow(ipai)/nrow(idec),2)
+
+nn <- c(dd,mm,ii)
+zz <- tibble(nprof,nn)
+names(zz) <- c("Profession", "Nb de 
+               cases cochées")
+zz |> 
+kbl( booktabs = TRUE) |> 
+  kable_styling(latex_options = "striped")
 ```
 
 
