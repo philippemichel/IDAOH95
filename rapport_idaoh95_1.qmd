@@ -10,8 +10,7 @@ cache: false
 rm(list = ls())
 classeur <- "idaoh95.ods"
 expx <- FALSE
-if (expx) {system(paste0("rm -f ",classeur))}
-
+#
 library(corrplot)
 library(baseph)
 library(GGally)
@@ -71,7 +70,7 @@ corx <- function(prof,titx){
   prof |> 
    mutate_if(is.factor, as.numeric) |> 
    dplyr::select(!id) |> 
-   ggcorr(drop = TRUE) +
+   ggcorr(drop = TRUE, hjust = 0.9) +
     scale_fill_continuous_sequential(palette = "Dark Mint") +   
   labs(title = tit,
       y = "n",
@@ -95,7 +94,7 @@ corx <- function(prof,titx){
 #| fig-cap: Corrélations internes - directeurs
 dire |> 
   janitor::remove_constant() |> 
-  dplyr::select(- organisations_specifiques) |> 
+  dplyr::select(- organisations_specifiques, - nb_lits_rec) |> 
   dplyr::select(- contains("moyen")) |> 
 corx("Directeurs")
 ```
@@ -286,15 +285,14 @@ mission |>
 ```{r}
 #| label: fig-missionsipa1
 #| fig-cap: Missions pouvant être déléguées à des IPA
-#| fig-asp: 1.5
-
+#| fig-asp: 1.6
 mission |> 
 mutate(missions_rec =
   fct_recode(missions_ipa_structure,
     "Alerter le médecin" = "Alerter le médecin de toutes situations identifiées à risque",
     "Bilans paracliniques de suivi" = "Prescrire et évaluer les bilans paracliniques de suivi",
     "Suivi du patient" = "Planifier et coordonner le suivi du patient",
-    "Taitements, dispositifs médicaux matériel" = "Renouveler, ou adapter les traitements, les dispositifs médicaux et le matériel",
+    "Traitements dispositifs médicaux" = "Renouveler, ou adapter les traitements, les dispositifs médicaux et le matériel",
     "Prise en charge globale" = "Coordonner en collaboration avec le médecin la prise en charge globale",
     "Évaluer cliniquement le patient" = "Évaluer cliniquement le patient dans son ensemble",
     "Mise en œuvre des traitements" = "Coordonner, en collaboration avec le médecin, la mise en œuvre des traitements",
@@ -336,10 +334,10 @@ mission$missions_rec <- mission$missions_ipa_structure %>%
     "Alerter le médecin" = "Alerter le médecin de toutes situations identifiées à risque",
     "Bilans paracliniques de suivi" = "Prescrire et évaluer les bilans paracliniques de suivi",
     "Suivi du patient" = "Planifier et coordonner le suivi du patient",
-    "Taitements, dispositifs médicaux matériel" = "Renouveler, ou adapter les traitements, les dispositifs médicaux et le matériel",
+    "Traitements dispositifs médicaux" = "Renouveler, ou adapter les traitements, les dispositifs médicaux et le matériel",
     "Prise en charge globale" = "Coordonner en collaboration avec le médecin la prise en charge globale",
     "Évaluer cliniquement le patient" = "Évaluer cliniquement le patient dans son ensemble",
-    "Mise en œuvre des traitements" = "Coordonner, en collaboration avec le médecin, la mise en œuvre des traitements",
+    "Mise en œuvre traitements" = "Coordonner, en collaboration avec le médecin, la mise en œuvre des traitements",
     "Entretien avec le patient" = "Conduire un entretien avec le patient et en rédiger l’anamnèse",
     "Données issues de l’examen" = "Recueillir, interpréter et synthétiser les données issues de l’examen clinique et paraclinique",
     "Prévention, de dépistage, éducation" = "Concevoir et réaliser des actions de prévention, de dépistage et d’éducation à la santé",
@@ -355,10 +353,11 @@ tit <- c("IDEC","Médecin coordinateur")
 colx = c("#00AFBB", "#FC4E07")
 
 par(cex = 0.6)
-radarchart(aa, title = "Missions pouvant être déléguées à des IPA", pcol = colx, , plwd =2, plty = 1)
+radarchart(aa, title = "Missions pouvant être déléguées à des IPA", pcol = colx, , plwd =2, plty = 1, vlcex = 1.3)
 legend(
   x = "bottom", legend = rownames(aa[-c(1,2),]), horiz = TRUE, col = colx,
-  bty = 0,pch = 20, yjust = -2, xjust = 0)
+  bty = 0,pch = 20, yjust = -2, xjust = 0) +
+  scale_x_discrete(guide = guide_axis(n.dodge = 2))
 ```
 
 
@@ -661,6 +660,7 @@ lnn <- paste0("moyen",1:5)
 moyen |> 
   dplyr::filter(name %in% lnn) |> 
   dplyr::select(profession, value) |> 
+
   mutate(value = fct_infreq(value)) |> 
   tbl_summary(by = profession) |> 
   add_p(test = ptest) |> 
@@ -671,6 +671,56 @@ moyen |>
             nomfich = classeur ,
             nomsheet = "moyen5")
 ```
+
+Le graphique ne reprend que les axes les plus cités dans les cinq premiers. 
+
+```{r}
+#| label: fig-axes
+#| fig-cap: Axes d’amélioration à une bonne prise en charge médicale des résidents
+
+moyen |> 
+  dplyr::filter(name %in% lnn) |> 
+  mutate(value = fct_lump_min(value, 3)) |> 
+  mutate(value =   fct_recode(value,
+    "Délégation de  tâches" = "Délégation de certaines tâches",
+    "coordination ville-hôpital" = "Meilleure coordination ville-hôpital en filière gériatrique",
+    "Équipes mobiles" = "Plus d’équipes mobiles",
+    "Temps médical" = "Plus de temps médical",
+    "Temps paramédical" = "Plus de temps paramédical",
+    "Assistance sociale" = "Présence d'une assistance sociale"
+  )) |> 
+  mutate(value = fct_infreq(value)) |> 
+    mutate(value = fct_lump_n(value , 6)) |> 
+  dplyr::filter (value != "Other") |> 
+  ggplot() +
+  aes(x = value, fill = profession) +
+  geom_bar(stat = "count", position = "dodge") +
+  labs(title = "Axes d’amélioration à une bonne prise en charge",
+      subtitle = "médicale des résidents",
+      x = "",
+      y = "n",
+      caption = "",
+      fill = "") +
+  theme_light() +
+  scale_fill_jama() +
+  theme(
+    plot.title = element_text(size = 14, face = "bold"),
+    plot.subtitle = element_text(size = 14, face = "bold"),
+    axis.title.x = element_text(size = 12),
+    legend.title = element_text(size = 12),
+    axis.title.y = element_text(
+      size = 12,
+      angle = 0,
+      vjust = .5
+    ),
+  axis.text.x = element_text(size = 10, 
+                             angle = 30,
+                             hjust = 1),
+  axis.text.y = element_text(size = 12),
+  legend.position = "bottom"
+  )
+```
+
 
 \appendix
 
