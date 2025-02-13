@@ -8,10 +8,12 @@ cache: false
 #| label: info
 
 rm(list = ls())
-classeur <- "idaoh95.ods"
-expx <- FALSE
+classeur <- "idaoh95_2.ods"
+expx <- TRUE
+#if(expx){file.create(classeur)}
 #
 library(corrplot)
+library(readODS)
 library(baseph)
 library(GGally)
 library(ggsci)
@@ -40,6 +42,7 @@ dir_ide <- left_join(dire,idec,by = "no_etab")
 
 prof <- c("dire", "medco","idec")
 nprof <- c("Directeurs", "Médecins coordonateurs", "IDEC")
+nbprof <- c(41,33,57)
 ```
 
 # Généralités
@@ -148,8 +151,16 @@ cronid <- cron(idec)
 cron <- c(crondir, cronmed,cronid)
 cron <- tibble(nprof,cron)
 names(cron) <- c("Profession", "Cœf. alpha")
-kbl(cron, booktabs = TRUE) |> 
+
+cron |> 
+kbl(bbooktabs = TRUE) |> 
   kable_styling()
+
+if (expx) {
+      cron |>
+        as_tibble() |>
+        write_ods(path = classeur, sheet = "cronbach", append = TRUE)
+    }
 ```
 
 Les coefficients $\alpha$ de Cronbach pour les trois questionnaires sont corrects vu la taille des échantillons ce qui confirme la qualité du remplissage. 
@@ -254,6 +265,7 @@ medmis <- medco |>
   dplyr::select(missions_ipa_structure, prescripteur) |> 
   separate_longer_delim(c(missions_ipa_structure,prescripteur), delim = c(";")) |> 
   mutate(profession = "Médecin coordinateur")
+var_label(medmis$missions_ipa_structure ) <- "Missions de l'IPA"
 
 
 idecmis <- idec |> 
@@ -270,6 +282,9 @@ rbind(idecmis) |>
 var_label(mission) <- c( "Quelles seraient pour vous les principales missions d’une IPA au sein de votre structure ","Profession")
 ```
 
+
+
+
 ```{r}
 #| label: tbl-missionsipa1
 #| tbl-cap: Missions pouvant être déléguées à des IPA
@@ -283,6 +298,8 @@ mission |>
   gexptabph(exp = expx, nomfich = classeur , nomsheet = "mission1") |> 
   column_spec(1, width = "30em") 
 ```
+
+
 
 ```{r}
 #| label: fig-missionsipa1
@@ -326,6 +343,8 @@ mutate(missions_rec =
  
 ```
 
+
+
 ```{r}
 #| label: fig-mission-rad
 #| fig-cap: Missions pouvant être déléguées à des IPA
@@ -347,7 +366,8 @@ mission$missions_rec <- mission$missions_ipa_structure %>%
     "Évaluation de la fragilité" = "Evaluation de la fragilité"
   )
 aa <- table(mission$profession,mission$missions_rec)
-max <- rep(40,13)
+aa <- 100*aa/c(41,33)
+max <- rep(100,13)
 min <- rep(0,13)
 aa <- rbind(max,min,aa)
 aa <- data.frame(aa)
@@ -358,8 +378,7 @@ par(cex = 0.6)
 radarchart(aa, title = "Missions pouvant être déléguées à des IPA", pcol = colx, , plwd =2, plty = 1, vlcex = 1.3)
 legend(
   x = "bottom", legend = rownames(aa[-c(1,2),]), horiz = TRUE, col = colx,
-  bty = 0,pch = 20, yjust = -2, xjust = 0) +
-  scale_x_discrete(guide = guide_axis(n.dodge = 2))
+  bty = 0,pch = 20, yjust = -2, xjust = 0) 
 ```
 
 
@@ -375,7 +394,7 @@ medmis |>
     bold_labels() |> 
    add_p(test = ptest) |> 
    modify_header(label ~ " ") |>
-  gexptabph(exp = expx, nomfich = classeur , nomsheet = "mission1") |> 
+  gexptabph(exp = expx, nomfich = classeur , nomsheet = "mission_presc") |> 
   column_spec(1, width = "30em") 
 ```
 
@@ -383,7 +402,7 @@ Il n'y a pas de différence visible entre les médecins coordonnateurs prescript
 
 ```{r}
 #| label: tbl-ipa_nblits
-#| tbl-cap: issions pouvant être déléguées à des IPA (taille Ehpad)
+#| tbl-cap: Missions pouvant être déléguées à des IPA (taille Ehpad)
 
 left_join(dire,medco, join_by(no_etab == numero_d_identification_de_letablissement)) |> dplyr::select(missions_ipa_structure,nb_lits_rec) |>
   drop_na(missions_ipa_structure) |>
@@ -394,7 +413,7 @@ left_join(dire,medco, join_by(no_etab == numero_d_identification_de_letablisseme
   bold_labels() |>
   add_p(test = ptest) |>
   modify_header(label ~ " ") |>
-  gexptabph(exp = expx, nomfich = classeur , nomsheet = "mission1") |>
+  gexptabph(exp = expx, nomfich = classeur , nomsheet = "mission_nblits") |>
   column_spec(1, width = "30em")
 ```
 
@@ -586,19 +605,19 @@ zz |>
 #| label: ipa-prep
 
 ipad <- dire |> 
-  dplyr::select(missions_ipa) |> 
-  separate_rows(missions_ipa, sep = c(";")) |> 
+  dplyr::select(missions_ipa,id) |> 
+  separate_longer_delim(c(missions_ipa,id), delim = c(";")) |> 
   mutate(profession = "Directeur")
 
 ipam <- medco |> 
-  dplyr::select(principales_missions_ipa) |> 
-  separate_rows(principales_missions_ipa, sep = c(";")) |> 
+  dplyr::select(principales_missions_ipa,id) |> 
+  separate_longer_delim(c(principales_missions_ipa,id), delim = c(";")) |> 
   mutate(profession = "Médecin coordonateur")
 names(ipam)[1] <-  "missions_ipa"
 
 ipai <- idec |> 
-  dplyr::select(missions_ipa) |> 
-  separate_rows(missions_ipa, sep = c(";")) |> 
+  dplyr::select(missions_ipa,id) |> 
+  separate_longer_delim(c(missions_ipa,id), delim = c(";")) |> 
   mutate(profession = "IDEC")
 
 zz <- rbind(ipad,ipam,ipai) |> 
@@ -606,6 +625,12 @@ zz <- rbind(ipad,ipam,ipai) |>
   mutate(missions_ipa = fct_infreq(missions_ipa))
 
 var_label(zz$missions_ipa) <- "Missions des IPA"
+
+nl <- dire |> 
+  dplyr::select(id,nb_lits_rec) |> 
+  mutate(id = as.factor(id))
+
+zz <- left_join(zz,nl, by = "id")
 ```
 
 
@@ -615,6 +640,7 @@ var_label(zz$missions_ipa) <- "Missions des IPA"
 #| tbl-cap: Évaluer la connaissance du métier d’\gls{ipa} au sein des \textsc{Ehpad}
 
 zz |> 
+  dplyr::select(missions_ipa,profession) |> 
   tbl_summary(by = profession) |> 
     bold_labels() |>
   modify_header(label ~ " ") |>
@@ -632,24 +658,56 @@ zz |>
 #| label: tbl-ipacases
 #| tbl-cap: Évaluer la connaissance du métier d’\gls{ipa} au sein des \textsc{Ehpad}
 
-ipam <- ipam |> 
-  dplyr::filter(missions_ipa !="")
-ipai <- ipai |> 
-  dplyr::filter(missions_ipa !="")
-ipad <- ipad |> 
-  dplyr::filter(missions_ipa !="")
+ipam <- ipam |>
+  dplyr::filter(missions_ipa != "")
+ipai <- ipai |>
+  dplyr::filter(missions_ipa != "")
+ipad <- ipad |>
+  dplyr::filter(missions_ipa != "")
 
-dd <- round(nrow(ipad)/nrow(dire),2)
-mm <- round(nrow(ipam)/nrow(medco),2)
-ii <- round(nrow(ipai)/nrow(idec),2)
+dd <- round(nrow(ipad) / nrow(dire), 2)
+mm <- round(nrow(ipam) / nrow(medco), 2)
+ii <- round(nrow(ipai) / nrow(idec), 2)
 
-nn <- c(dd,mm,ii)
-zz <- tibble(nprof,nn)
-names(zz) <- c("Profession", "Nb de 
+nn <- c(dd, mm, ii)
+zzn <- tibble(nprof, nn)
+names(zzn) <- c("Profession", "Nb de
                cases cochées")
-zz |> 
-kbl( booktabs = TRUE) |> 
+zzn |>
+  kbl(booktabs = TRUE) |>
   kable_styling(latex_options = "striped")
+
+if (expx) {
+  zzn |>
+    as_tibble() |>
+    write_ods(path = classeur,
+              sheet = "mission_ipa",
+              append = TRUE)
+}
+```
+
+### Taille de l'établissement
+
+```{r}
+#| label: tbl-ipataille
+#| tbl-cap: Évaluer la connaissance du métier d’\gls{ipa} au sein des \textsc{Ehpad} selon la taille de 'établissement
+
+zzn <- tibble(levels(dire$nb_lits_rec),
+              table(zz$nb_lits_rec) / table(dire$nb_lits_rec)) |>
+  rename('taille de l\'établissement' = 'levels(dire$nb_lits_rec)',
+         'nb de case cochées' = 'table(zz$nb_lits_rec)/table(dire$nb_lits_rec)')
+
+zzn |>
+  kbl(booktabs = TRUE) |>
+  kable_styling(latex_options = "striped")
+
+if (expx) {
+  zzn |>
+    as_tibble() |>
+    write_ods(path = classeur,
+              sheet = "ipa_taille",
+              append = TRUE)
+}
 ```
 
 
@@ -688,6 +746,7 @@ mutate(value = fct_recode(value,
     "Accompagnement des familles" = "Accompagnement des familles ",
     "Plus de temps médical" = "Plus de temps médical  ",
     "Plus de temps paramédical" = "Plus de temps paramédical        ",
+    "Coordination ville-hôpital" = "Meilleure coordination ville-hôpital en filière gériatrique",
     "Présence d'une assistance sociale" = "Présence d’une assistance sociale"
   )) |> 
   mutate(value = as.factor(value))
@@ -749,7 +808,7 @@ moyen |>
   mutate(value = fct_lump_min(value, 3)) |> 
   mutate(value =   fct_recode(value,
     "Délégation de  tâches" = "Délégation de certaines tâches",
-    "coordination ville-hôpital" = "Meilleure coordination ville-hôpital en filière gériatrique",
+    "coordination ville-hôpital" = "Meilleure coordination ville-hôpital",
     "Équipes mobiles" = "Plus d’équipes mobiles",
     "Temps médical" = "Plus de temps médical",
     "Temps paramédical" = "Plus de temps paramédical",
@@ -785,6 +844,39 @@ moyen |>
   axis.text.y = element_text(size = 12),
   legend.position = "bottom"
   )
+```
+
+```{r}
+#| label: fig-axes-rad
+#| fig-cap: Axes d’amélioration à une bonne prise en charge médicale des résidents
+
+
+mm <- moyen |> 
+  dplyr::filter(name %in% lnn) |> 
+  mutate(value = fct_lump_min(value, 3)) |> 
+  mutate(value =   fct_recode(value,
+    "Délégation de  tâches" = "Délégation de certaines tâches",
+    "Équipes mobiles" = "Plus d’équipes mobiles",
+    "Temps médical" = "Plus de temps médical",
+    "Temps paramédical" = "Plus de temps paramédical",
+    "Assistance sociale" = "Présence d'une assistance sociale"
+  )) 
+
+aa <- table(mm$profession,mm$value)
+aa <- 100*aa/nbprof
+max <- rep(100,10)
+min <- rep(0,10)
+aa <- rbind(max,min,aa)
+aa <- data.frame(aa)
+#tit <- c("IDEC","Médecin coordinateur")
+colx = c("#00AFBB", "#FC4E07", "#00AA11")
+
+
+  par(cex = 0.6)
+radarchart(aa, title = "Axes d’amélioration à une bonne prise en charge médicale des résidents", pcol = colx, , plwd =2, plty = 1, vlcex = 1.3)
+legend(
+  x = "bottom", legend = rownames(aa[-c(1,2),]), horiz = TRUE, col = colx,
+  bty = 0,pch = 20, yjust = -2, xjust = 0) 
 ```
 
 
