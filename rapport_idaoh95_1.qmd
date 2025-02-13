@@ -1,6 +1,6 @@
 ---
 subtitle: "Rapport statistique V1.1"
-cache: false
+cache: true
 ---
 
 
@@ -139,33 +139,36 @@ Dans les deux cas ces corrélations demeurent raisonnables & ont du sens donc ne
 #| tbl-cap: Cœfficient alpha de Cronbach
 
 
-cron <- function(prof){
-zz <- prof |>  
-  drop_na() |> 
-   mutate_if(is.factor, as.numeric) |> 
-  alpha(check.keys=TRUE)
-zz <- zz$total
-zz <- round(zz$std.alpha,2)
-return(zz)
+cron <- function(prof) {
+  zz <-   prof |>
+    drop_na() |>
+    janitor::remove_constant() |>
+    mutate_if(is.factor, as.numeric) |>
+    psych::alpha(check.keys = TRUE)
+  zz <- zz$total
+  zz <- round(zz$std.alpha, 2)
+  return(zz)
 }
 #
 crondir <- cron(dire)
 cronmed <- cron(medco)
 cronid <- cron(idec)
 #
-cron <- c(crondir, cronmed,cronid)
-cron <- tibble(nprof,cron)
+cron <- c(crondir, cronmed, cronid)
+cron <- tibble(nprof, cron)
 names(cron) <- c("Profession", "Cœf. alpha")
 
-cron |> 
-kbl(bbooktabs = TRUE) |> 
+cron |>
+  kbl(bbooktabs = TRUE) |>
   kable_styling()
 
 if (expx) {
-      cron |>
-        as_tibble() |>
-        write_ods(path = classeur, sheet = "cronbach", append = TRUE)
-    }
+  cron |>
+    as_tibble() |>
+    write_ods(path = classeur,
+              sheet = "cronbach",
+              append = TRUE)
+}
 ```
 
 Les coefficients $\alpha$ de Cronbach pour les trois questionnaires sont corrects vu la taille des échantillons ce qui confirme la qualité du remplissage. 
@@ -221,7 +224,7 @@ mutate(organisations_specifiques =
    modify_header(label ~ " ") |>
   pexptabph(exp = expx, nomfich = classeur , nomsheet = "orgspe", lg = TRUE) 
 ```
-
+\newpage
 ## Médecins coordonateurs
 
 ```{r}
@@ -522,7 +525,9 @@ medco |>
   )
 ```
 
-\newpage
+
+\clearpage
+
 
 ## Critère III
 
@@ -571,7 +576,8 @@ zz |>
   modify_header(label ~ " ") |>
   pexptabph(exp = expx,
             nomfich = classeur ,
-            nomsheet = "idec_cinq")
+            nomsheet = "idec_cinq", 
+            lg = TRUE)
 ```
 
 ```{r}
@@ -656,7 +662,7 @@ zz |>
   column_spec(1, width = "30em")
 ```
 
-\clearpage
+\FloatBarrier
 ### Nombre de cases cochées
 
 ```{r}
@@ -691,6 +697,7 @@ if (expx) {
 }
 ```
 
+\FloatBarrier
 ### Taille de l'établissement
 
 ```{r}
