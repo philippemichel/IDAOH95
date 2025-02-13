@@ -8,9 +8,6 @@ cache: false
 #| label: info
 
 rm(list = ls())
-classeur <- "idaoh95_2.ods"
-expx <- TRUE
-#if(expx){file.create(classeur)}
 #
 library(corrplot)
 library(readODS)
@@ -29,6 +26,14 @@ library(forestmodel)
 library(psych)
 library(fmsb)
 library(labelled)
+#
+classeur <- "idaoh95_2.ods"
+expx <- FALSE
+if (expx) {
+  file.create(classeur)
+  file.remove(classeur)
+  write_ods(iris, classeur)
+}
 
 # sessionInfo()
 theme_gtsummary_language(language = "fr", decimal.mark = ",")
