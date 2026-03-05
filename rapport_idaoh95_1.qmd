@@ -1,6 +1,6 @@
 ---
-subtitle: "Rapport statistique V1.1"
-cache: true
+subtitle: "Rapport statistique V1.2"
+cache: false
 ---
 
 
@@ -20,14 +20,14 @@ library(scales)
 library(ggridges)
 library(kableExtra)
 library(gtsummary)
-library(DataExplorer)
+#library(DataExplorer)
 library(colorspace)
 library(forestmodel)
 library(psych)
 library(fmsb)
 library(labelled)
 #
-classeur <- "idaoh95_2.ods"
+classeur <- "idaoh95.ods"
 expx <- FALSE
 if (expx) {
   file.create(classeur)
@@ -90,7 +90,7 @@ corx <- function(prof,titx){
     plot.subtitle = element_text(size = 12),
     axis.title.x = element_blank(),
     legend.title = element_blank(),
-    axis.title.y = element_blank(),,
+    axis.title.y = element_blank(),
          axis.text.x = element_text(size = 12 ),
       axis.text.y = element_text(size = 12),
       legend.position = "right")
@@ -646,6 +646,7 @@ zz <- left_join(zz,nl, by = "id")
 
 
 
+
 ```{r}
 #| label: tbl-connais-ipa
 #| tbl-cap: Évaluer la connaissance du métier d’\gls{ipa} au sein des \textsc{Ehpad}
@@ -669,32 +670,24 @@ zz |>
 #| label: tbl-ipacases
 #| tbl-cap: Évaluer la connaissance du métier d’\gls{ipa} au sein des \textsc{Ehpad}
 
-ipam <- ipam |>
-  dplyr::filter(missions_ipa != "")
-ipai <- ipai |>
-  dplyr::filter(missions_ipa != "")
-ipad <- ipad |>
-  dplyr::filter(missions_ipa != "")
+zza <- rbind(ipad,ipai,ipam) |> 
+  dplyr::filter(missions_ipa != "") |> 
+group_by(id, profession) |> 
+  summarise(nrep =n())
 
-dd <- round(nrow(ipad) / nrow(dire), 2)
-mm <- round(nrow(ipam) / nrow(medco), 2)
-ii <- round(nrow(ipai) / nrow(idec), 2)
-
-nn <- c(dd, mm, ii)
-zzn <- tibble(nprof, nn)
-names(zzn) <- c("Profession", "Nb de
-               cases cochées")
-zzn |>
-  kbl(booktabs = TRUE) |>
-  kable_styling(latex_options = "striped")
-
-if (expx) {
-  zzn |>
-    as_tibble() |>
-    write_ods(path = classeur,
-              sheet = "mission_ipa",
-              append = TRUE)
-}
+var_label(zza$nrep) <-  "Nombre de réponses"
+  
+zza |> 
+  dplyr::select(!id) |> 
+  tbl_summary(by = profession,
+              include = c(profession, nrep)) |>
+  add_p() |> 
+  bold_labels() |>
+  modify_header(label ~ " ") |>
+    gexptabph(exp = expx,
+            nomfich = classeur ,
+            nomsheet = "nb_case_prof") 
+  
 ```
 
 \FloatBarrier
@@ -704,22 +697,22 @@ if (expx) {
 #| label: tbl-ipataille
 #| tbl-cap: Évaluer la connaissance du métier d’\gls{ipa} au sein des \textsc{Ehpad} selon la taille de 'établissement
 
-zzn <- tibble(levels(dire$nb_lits_rec),
-              table(zz$nb_lits_rec) / table(dire$nb_lits_rec)) |>
-  rename('taille de l\'établissement' = 'levels(dire$nb_lits_rec)',
-         'nb de case cochées' = 'table(zz$nb_lits_rec)/table(dire$nb_lits_rec)')
+aa <- zz |> 
+group_by(id, nb_lits_rec) |> 
+  summarise(nrep =n())
 
-zzn |>
-  kbl(booktabs = TRUE) |>
-  kable_styling(latex_options = "striped")
-
-if (expx) {
-  zzn |>
-    as_tibble() |>
-    write_ods(path = classeur,
-              sheet = "ipa_taille",
-              append = TRUE)
-}
+var_label(aa$nrep) <-  "Nombre de réponses"
+  
+aa |> 
+  dplyr::select(!id) |> 
+  tbl_summary(by = nb_lits_rec,
+              include = c(nb_lits_rec, nrep)) |>
+  add_p() |> 
+  bold_labels() |>
+  modify_header(label ~ " ") |>
+    gexptabph(exp = expx,
+            nomfich = classeur ,
+            nomsheet = "nb_case_taille") 
 ```
 
 
@@ -895,13 +888,11 @@ legend(
 \appendix
 
 # Technique 
+ % 
+Un risque $\alpha$ de 5 % & une puissance de 80 % ont été retenus pour les tests statistiques.
 
-L'analyse statistique a été réalisée avec le logiciel **R**[@rstat] & divers packages. Outre ceux cités dans le texte on a utilisé en particulier `tidyverse` [@tidy] & `baseph` [@baseph].
+Vu la faible taille de l'échantillon aucune hypothèse de normalité ne peut être effectuée. Les données numériques sont donc présentées en médianes avec les quartiles & comparées par des tests non paramétriques (test de Wilcoxon pour séries non appariées ou test de Kruskal-Wallis si plus de deux modalités). LEs données discrètes sont présentées en nombre & pourcentage & comparées par des tests du $\Chi^2$ de Pearson.
 
-Un dépôt GitHub a été utilisé qui ne comprend que le code & non les données ou résultats. Au besoin un faux tableau de données sera présenté pour permettre des tests.
+L'analyse statistique a été réalisée avec le logiciel **R** (R Core Team (2025) -- Vienna)
 
-<https://github.com/philippemichel/idaoh95/>
 
-\printglossaries
-
-\addcontentsline{toc}{chapter}{C. Bibliographie}

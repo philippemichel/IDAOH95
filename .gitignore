@@ -56,3 +56,5 @@ fig.zip
 README.tex
 tmp-pdfcrop-17406.tex
 idaoh95_2.ods
+
+**/*.quarto_ipynb

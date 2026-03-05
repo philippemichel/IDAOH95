@@ -18,7 +18,10 @@ Enquête sur plusieurs établissements
 
 
 **14/11/2024** Plan d'analyse des données v1.1
+
 **13/02/2025** Rapport statistique v2.0
+
+**05/03/2026** Rapport corrigé (tableaux en gorup_by etc.)
 
 ## Fichiers
 
